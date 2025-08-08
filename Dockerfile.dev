@@ -1,20 +1,13 @@
-# Используем Node.js
 FROM node:18
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json и yarn.lock
-COPY package.json yarn.lock ./
-
-# Устанавливаем зависимости
-RUN yarn install
-
-# Копируем проект
 COPY . .
 
-# Открываем порт Next.js
-EXPOSE 3000
+RUN yarn config set registry https://registry.npmjs.org && \
+    yarn config set network-timeout 600000 && \
+    yarn install
 
-# Запуск dev-сервера
+EXPOSE 3042
+
 CMD ["yarn", "dev"]

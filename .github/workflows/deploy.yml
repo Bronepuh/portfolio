@@ -45,10 +45,8 @@ jobs:
               echo "🛑 Stopping old container..."
               yarn prod:down || true
 
-              echo "📦 Installing deps..."
-              yarn config set registry https://registry.npmjs.org
-              yarn config set network-timeout 600000
-              yarn install --frozen-lockfile --silent
+              echo "🏗️ Building Docker image..."
+              yarn prod:build
 
               echo "🚀 Starting container..."
               yarn prod:up
