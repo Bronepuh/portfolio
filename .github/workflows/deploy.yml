@@ -24,26 +24,29 @@ jobs:
       - name: 🚀 Deploy to Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_USER: root
+          SERVER_IP: 78.24.180.133
         run: |
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-            set -e  # прерывает выполнение при ошибке
-            cd ~/portfolio
-            yarn cache clean &&
+          bash -c "
+            ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP '
+              set -e
+              cd ~/portfolio
+              echo \"📥 Pulling latest code...\"
+              git fetch --all
+              git reset --hard origin/main
 
-            echo "🔁 Pulling latest code..."
-            git fetch &&
-            git pull origin main &&
+              echo \"🛑 Stopping old container...\"
+              yarn prod:down || true
 
-            echo "🔽 Stopping old container..."
-            yarn prod:down &&
+              echo \"📦 Installing deps...\"
+              yarn install --frozen-lockfile
 
-            echo "🚀 Starting new container..."
-            yarn prod:up
-          EOF
+              echo \"🚀 Starting container...\"
+              yarn prod:up
+            '
+          "
 
           rm -f private_key.pem
