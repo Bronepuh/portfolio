@@ -10,15 +10,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout code
+      - name: 🧾 Checkout code
         uses: actions/checkout@v3
 
-      - name: 🧰 Set up Node.js
+      - name: 🔧 Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
-      - name: 🔐 Set up SSH key and deploy
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🛠 Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: 🚀 Deploy to Server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -27,22 +35,22 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          bash -c "ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP '
-            set -e
+          ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+            set -e  # прерывает выполнение при ошибке
             cd ~/portfolio
 
-            echo \"📥 Pulling latest code...\"
+            echo "🔁 Pulling latest code..."
             git fetch --all
             git reset --hard origin/main
 
-            echo \"🛑 Stopping old container...\"
+            echo "🔽 Stopping old container..."
             yarn prod:down || true
 
-            echo \"📦 Installing dependencies...\"
+            echo "📦 Installing dependencies..."
             yarn install --frozen-lockfile
 
-            echo \"🚀 Starting production container...\"
+            echo "🚀 Starting new container..."
             yarn prod:up
-          '"
+          EOF
 
           rm -f private_key.pem
