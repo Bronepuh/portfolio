@@ -27,22 +27,22 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+          bash -c "ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP '
             set -e
             cd ~/portfolio
 
-            echo "📥 Pulling latest code..."
+            echo \"📥 Pulling latest code...\"
             git fetch --all
             git reset --hard origin/main
 
-            echo "🛑 Stopping old container (if any)..."
+            echo \"🛑 Stopping old container...\"
             yarn prod:down || true
 
-            echo "📦 Installing dependencies..."
+            echo \"📦 Installing dependencies...\"
             yarn install --frozen-lockfile
 
-            echo "🚀 Starting production container..."
+            echo \"🚀 Starting production container...\"
             yarn prod:up
-          EOF
+          '"
 
           rm -f private_key.pem
