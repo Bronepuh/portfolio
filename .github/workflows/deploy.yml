@@ -33,16 +33,14 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
             set -e  # прерывает выполнение при ошибке
             cd ~/portfolio
+            yarn cache clean &&
 
             echo "🔁 Pulling latest code..."
-            git fetch --all
-            git reset --hard origin/main
+            git fetch &&
+            git pull origin main &&
 
             echo "🔽 Stopping old container..."
-            yarn prod:down || true
-
-            echo "📦 Installing dependencies..."
-            yarn install --frozen-lockfile
+            yarn prod:down &&
 
             echo "🚀 Starting new container..."
             yarn prod:up
