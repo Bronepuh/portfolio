@@ -577,6 +577,9 @@ main {
   border-radius: var(--radius-12);
   box-shadow: 2px 4px 6px hsla(0, 0%, 0%, 0.2);
 }
+.card-banner img {
+  object-fit: cover;
+}
 .project-card::after {
   content: '';
   position: absolute;
