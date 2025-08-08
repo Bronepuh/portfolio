@@ -5,7 +5,7 @@ NAME="portfolio"               # имя контейнера
 IMAGE_DEV="portfolio-dev"     # имя образа для dev
 IMAGE_PROD="portfolio-prod"   # имя образа для prod
 PORT=3042                     # внешний порт (что открыто в браузере)
-INTERNAL_PORT=3000            # порт, на котором слушает Next.js внутри контейнера
+INTERNAL_PORT=3042            # порт, на котором слушает Next.js внутри контейнера
 NETWORK="mf-network"          # имя docker-сети
 
 # Определяем режим (dev/prod)
