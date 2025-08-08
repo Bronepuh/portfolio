@@ -31,24 +31,28 @@ jobs:
           chmod 600 private_key.pem
 
           bash -c "
-            ssh -i private_key.pem -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP '
-              set -e
-              cd ~/portfolio
-              echo \"📥 Pulling latest code...\"
-              git fetch --all
-              git reset --hard origin/main
+            ssh -i private_key.pem \
+              -o StrictHostKeyChecking=no \
+              -o ServerAliveInterval=60 \
+              $SERVER_USER@$SERVER_IP '
+                set -e
+                cd ~/portfolio
 
-              echo \"🛑 Stopping old container...\"
-              yarn prod:down || true
+                echo \"📥 Pulling latest code...\"
+                git fetch --all
+                git reset --hard origin/main
 
-              echo \"📦 Installing deps...\"
-              yarn config set registry https://registry.npmjs.org
-              yarn config set network-timeout 600000
-              yarn install --frozen-lockfile
+                echo \"🛑 Stopping old container...\"
+                yarn prod:down || true
 
-              echo \"🚀 Starting container...\"
-              yarn prod:up
-            '
+                echo \"📦 Installing dependencies...\"
+                yarn config set registry https://registry.npmjs.org
+                yarn config set network-timeout 600000
+                yarn install --frozen-lockfile --verbose
+
+                echo \"🚀 Starting container...\"
+                yarn prod:up
+              '
           "
 
           rm -f private_key.pem

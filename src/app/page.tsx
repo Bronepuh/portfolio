@@ -29,6 +29,7 @@ export default function MainPage() {
           priority
         />
         <HandAnimation />
+        <p>Не переключайтесь, сейчас всё будет!</p>
         <ol>
           <li>
             Get started by editing <code>src/app/page.tsx</code>.

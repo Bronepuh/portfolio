@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 RUN yarn config set registry https://registry.npmjs.org && \
+    yarn config set network-timeout 600000 && \
     yarn install --frozen-lockfile
 
 # Копируем исходники
@@ -25,15 +26,16 @@ FROM node:18
 WORKDIR /app
 
 # Копируем артефакты
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/yarn.lock ./
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
+COPY --from=builder /app/package.json ./  
+COPY --from=builder /app/yarn.lock ./  
+COPY --from=builder /app/.next ./.next  
+COPY --from=builder /app/public ./public  
+COPY --from=builder /app/next.config.mjs ./next.config.mjs  
 COPY --from=builder /app/src ./src
 
 # Устанавливаем только прод-зависимости
 RUN yarn config set registry https://registry.npmjs.org && \
+    yarn config set network-timeout 600000 && \
     yarn install --production --frozen-lockfile
 
 EXPOSE 3000
