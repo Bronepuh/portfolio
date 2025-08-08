@@ -1,0 +1,20 @@
+# Используем Node.js
+FROM node:18
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем package.json и yarn.lock
+COPY package.json yarn.lock ./
+
+# Устанавливаем зависимости
+RUN yarn install
+
+# Копируем проект
+COPY . .
+
+# Открываем порт Next.js
+EXPOSE 3000
+
+# Запуск dev-сервера
+CMD ["yarn", "dev"]
