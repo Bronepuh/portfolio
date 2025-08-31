@@ -4,6 +4,12 @@ import React from 'react';
 export default function Portfolio() {
   const projects = [
     {
+      image: '/ddoser.png',
+      title: 'Аудит безопасности по доменному имени',
+      date: 'август 2025',
+      href: 'https://bronepuh.ru/ddoser',
+    },
+    {
       image: '/AW-slide.png',
       title: 'Интефейсы Armored Warfare',
       date: 'Июль 2024',

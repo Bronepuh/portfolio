@@ -9,7 +9,7 @@ export default function About() {
   const downloadResume = () => {
     // Создаем временную ссылку
     const link = document.createElement('a');
-    link.href = '/rezume.pdf'; // Путь относительно public
+    link.href = '/rezume1.pdf'; // Путь относительно public
     link.download = 'Denis_Vyatkin_Frontend_Developer.pdf'; // Имя файла при скачивании
     document.body.appendChild(link);
     link.click();
