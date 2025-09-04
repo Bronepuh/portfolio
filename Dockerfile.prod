@@ -1,3 +1,4 @@
+# ===== deps =====
 FROM node:18-bookworm-slim AS deps
 WORKDIR /app
 
@@ -14,7 +15,7 @@ RUN printf 'nodeLinker: node-modules\n' > .yarnrc.yml
 # кэш зависимостей
 ENV YARN_CACHE_FOLDER=/usr/local/.yarn-cache
 
-# ставим только манифесты — для кеша слоёв
+# только манифесты — для кеша
 COPY package.json yarn.lock ./
 RUN yarn install --immutable
 
@@ -22,12 +23,12 @@ RUN yarn install --immutable
 FROM node:18-bookworm-slim AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare yarn@4.9.4 --activate
+
+# исходники и node_modules
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
 
-# если есть next.config.ts — транслируем через tsx без установки в devDeps
-RUN test -f next.config.ts && yarn dlx tsx ./next.config.ts > next.config.mjs || true
-
+# без каких-либо tsx/ts-node — Next сам подхватит next.config.ts
 RUN yarn build
 
 # ===== runtime =====
@@ -36,9 +37,9 @@ ENV NODE_ENV=production
 ENV PORT=3042
 WORKDIR /app
 
+# для запуска хватает .next, public, package.json и node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/package.json ./package.json
 COPY --from=deps    /app/node_modules ./node_modules
 
