@@ -1,47 +1,31 @@
-# ===== deps =====
-FROM node:18-bookworm-slim AS deps
-WORKDIR /app
-
-# для нативных модулей (sharp и т.п.)
+FROM node:18-bullseye-slim AS deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ && rm -rf /var/lib/apt/lists/*
-
-# Yarn 4 через Corepack
-RUN corepack enable && corepack prepare yarn@4.9.4 --activate
-
-# чтобы Yarn создавал node_modules (а не PnP)
-RUN printf 'nodeLinker: node-modules\n' > .yarnrc.yml
-
-# кэш зависимостей
-ENV YARN_CACHE_FOLDER=/usr/local/.yarn-cache
-
-# только манифесты — для кеша
+RUN npm i -g yarn@1.22.22
+WORKDIR /app
 COPY package.json yarn.lock ./
-RUN yarn install --immutable
+RUN yarn config set registry https://registry.npmjs.org && \
+    yarn config set network-timeout 600000 && \
+    yarn install --frozen-lockfile
 
 # ===== build =====
-FROM node:18-bookworm-slim AS builder
+FROM node:18-bullseye-slim AS builder
+RUN npm i -g yarn@1.22.22
 WORKDIR /app
-RUN corepack enable && corepack prepare yarn@4.9.4 --activate
-
-# исходники и node_modules
 COPY . .
 COPY --from=deps /app/node_modules ./node_modules
-
-# без каких-либо tsx/ts-node — Next сам подхватит next.config.ts
 RUN yarn build
 
 # ===== runtime =====
-FROM node:18-bookworm-slim AS runner
+FROM node:18-bullseye-slim AS runner
+RUN npm i -g yarn@1.22.22
 ENV NODE_ENV=production
 ENV PORT=3042
 WORKDIR /app
-
-# для запуска хватает .next, public, package.json и node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
-COPY --from=deps    /app/node_modules ./node_modules
-
+# ставим только прод-зависимости
+RUN yarn install --production --frozen-lockfile --silent
 EXPOSE 3042
 CMD ["yarn","start"]
