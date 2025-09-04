@@ -1,31 +1,55 @@
-FROM node:18-bullseye-slim AS deps
+# ===== Стадия сборки =====
+FROM node:18 AS builder
+
+# тулчейн для нативных модулей на всякий
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ && rm -rf /var/lib/apt/lists/*
-RUN npm i -g yarn@1.22.22
+
+# установить КЛАССИЧЕСКИЙ Yarn 1 (без corepack)
+RUN npm i -g yarn@1.22.22 --force
+
 WORKDIR /app
+ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
+
+# Кэширование зависимостей
 COPY package.json yarn.lock ./
 RUN yarn config set registry https://registry.npmjs.org && \
     yarn config set network-timeout 600000 && \
     yarn install --frozen-lockfile
 
-# ===== build =====
-FROM node:18-bullseye-slim AS builder
-RUN npm i -g yarn@1.22.22
-WORKDIR /app
+# Копируем исходники
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
+
+# Транспилируем next.config.ts → next.config.mjs
+# (в Yarn 1 нет флага --no-cache, убрал его)
+RUN yarn add -D tsx && \
+    npx tsx ./next.config.ts > next.config.mjs
+
+# Сборка
 RUN yarn build
 
-# ===== runtime =====
-FROM node:18-bullseye-slim AS runner
-RUN npm i -g yarn@1.22.22
-ENV NODE_ENV=production
-ENV PORT=3042
+
+# ===== Продакшн стадия =====
+FROM node:18
+
+# установить Yarn 1
+RUN npm i -g yarn@1.22.22 --force
+
 WORKDIR /app
+ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
+
+# Копируем артефакты
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/yarn.lock ./yarn.lock
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
-# ставим только прод-зависимости
-RUN yarn install --production --frozen-lockfile --silent
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
+COPY --from=builder /app/src ./src
+
+# Устанавливаем только прод-зависимости
+RUN yarn config set registry https://registry.npmjs.org && \
+    yarn config set network-timeout 600000 && \
+    yarn install --production --frozen-lockfile --silent
+
 EXPOSE 3042
-CMD ["yarn","start"]
+CMD ["yarn", "start"]
