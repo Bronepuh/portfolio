@@ -1,50 +1,52 @@
-# ===== Стадия сборки =====
-FROM node:18 AS builder
+# ===== deps =====
+FROM node:18-bookworm-slim AS deps
+
+# Инструменты сборки для нативных модулей (sharp и т.п.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# ENV — локальный кеш чтобы избежать повреждённого системного
-ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
+# Yarn 4 через Corepack
+RUN corepack enable && corepack prepare yarn@4.9.4 --activate
 
-# Кэширование зависимостей
+# Кэш зависимостей
+ENV YARN_CACHE_FOLDER=/usr/local/.yarn-cache
+
+# Копируем только манифесты (если есть .yarnrc.yml — тоже скопируй)
 COPY package.json yarn.lock ./
+# COPY .yarnrc.yml ./
 
-RUN yarn config set registry https://registry.npmjs.org && \
-    yarn config set network-timeout 600000 && \
-    yarn install --frozen-lockfile
+# Установка зависимостей без модификации lockfile
+RUN yarn install --immutable
 
-# Копируем исходники
+# ===== build =====
+FROM node:18-bookworm-slim AS builder
+WORKDIR /app
+RUN corepack enable && corepack prepare yarn@4.9.4 --activate
+
+# Исходники и node_modules из deps
 COPY . .
+COPY --from=deps /app/node_modules ./node_modules
 
-# Транспилируем next.config.ts → next.config.mjs
-RUN yarn add -D tsx --no-cache && \
-    npx tsx ./next.config.ts > next.config.mjs
+# Транспиляция next.config.ts -> next.config.mjs (если файл есть)
+RUN test -f next.config.ts && yarn dlx tsx ./next.config.ts > next.config.mjs || true
 
-# Сборка
+# Сборка приложения
 RUN yarn build
 
-# ===== Продакшн стадия =====
-FROM node:18
-
+# ===== runtime =====
+FROM node:18-bookworm-slim AS runner
+ENV NODE_ENV=production
+ENV PORT=3042
 WORKDIR /app
 
-# ENV — локальный кеш на всякий случай
-ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
-
-# Копируем артефакты
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/yarn.lock ./
+# Минимум для запуска
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
-COPY --from=builder /app/src ./src
+COPY --from=builder /app/package.json ./package.json
+COPY --from=deps    /app/node_modules ./node_modules
 
-# Устанавливаем только прод-зависимости
-RUN yarn config set registry https://registry.npmjs.org && \
-    yarn config set network-timeout 600000 && \
-    yarn install --production --frozen-lockfile --silent
-
-# Обязательно EXPOSE для докера
 EXPOSE 3042
-
 CMD ["yarn", "start"]
