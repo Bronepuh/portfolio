@@ -1,87 +1,96 @@
-import Image from 'next/image';
-import React from 'react';
+import Image from "next/image";
+import React from "react";
 
 export default function Portfolio() {
-  const projects = [
-    {
-      image: '/authenticator.png',
-      title: 'Авторизация, мониторинг сервисов',
-      date: 'сентябрь 2025',
-      href: 'https://bronepuh.ru/authenticator',
-    },
-    {
-      image: '/ddoser.png',
-      title: 'Аудит безопасности по доменному имени',
-      date: 'август 2025',
-      href: 'https://bronepuh.ru/ddoser',
-    },
-    {
-      image: '/AW-slide.png',
-      title: 'Интефейсы Armored Warfare',
-      date: 'Июль 2024',
-      href: 'https://armoredwarfare.com/en',
-    },
-    {
-      image: '/YG-slide.png',
-      title: 'Игра "Цветочный Магазин"',
-      date: 'Сентябрь 2024',
-      href: 'https://yandex.ru/games/app/334999?utm_source=game_popup_menu',
-    },
-    {
-      image: '/shar-2.jpg',
-      title: 'Мобильное приложение "Шар судьбы"',
-      date: 'Декабрь 2023',
-      href: 'https://store.nashstore.ru/store/62c844070a39b24f4f808248',
-    },
-  ];
+	const projects = [
+		{
+			image: "/zvonilka-slide.png",
+			title: "Звонилка",
+			date: "сентябрь 2025",
+			href: "https://bronepuh.ru/zvonilka",
+			desc: "Сервис видеоконференций, работает стабильно даже когда все вокруг глушат.",
+		},
+		{
+			image: "/Horix-slide.png",
+			title: "Бот-нумеролог Horix",
+			date: "декабрь 2025",
+			href: "https://t.me/horix_for_you_bot",
+			desc: "Telegram-бот на собственном движке: точные расчёты, профессиональный уровень, подключена оплата.",
+		},
+		{
+			image: "/AW-slide.png",
+			title: "Интерфейсы Armored Warfare",
+			date: "июль 2024",
+			href: "https://armoredwarfare.com/en",
+			desc: "Разработка/поддержка игровых UI-интерфейсов для проекта Armored Warfare.",
+		},
+		{
+			image: "/YG-slide.png",
+			title: 'Игра "Раскраска"',
+			date: "январь 2026",
+			href: "https://yandex.ru/games/app/483174?draft=true&lang=ru",
+			desc: "Детская игра-раскраска для Яндекс.Игр: интерактивные сцены, оптимизация, UX под мобильные.",
+		},
+	];
 
-  return (
-    <div className="container">
-      <section className="project" id="Портфолио">
-        <ul className="project-list">
-          <li>
-            <div className="project-content section-content">
-              <p className="section-subtitle">Мои работы</p>
-              <h2 className="h3 section-title">Посмотри на эти проекты!</h2>
-              <p className="section-text">
-                От лендинга до сложного веб-приложения — делаю интерфейсы,
-                которые работают быстро, выглядят отлично и масштабируются без
-                боли.
-              </p>
-            </div>
-          </li>
+	return (
+		<div className="container">
+			<section className="project" id="Портфолио">
+				<ul className="project-list">
+					<li>
+						<div className="project-content section-content">
+							<p className="section-subtitle">Мои работы</p>
+							<h2 className="h3 section-title">Проекты, которые можно посмотреть</h2>
 
-          {projects.map((project, index) => (
-            <li key={index}>
-              <a href={project.href} className="project-card" target="_blank">
-                <figure className="card-banner">
-                  <Image
-                    width={500}
-                    height={200}
-                    src={project.image}
-                    alt={project.title}
-                    loading="lazy"
-                  />
-                </figure>
+							{/* переносы строк + аккуратная разметка */}
+							<div className="section-text">
+								<ul className="project-desc-list">
+									{projects.map((p) => (
+										<li key={p.href}>
+											<strong>{p.title}</strong> — {p.desc}
+										</li>
+									))}
+								</ul>
+							</div>
+						</div>
+					</li>
 
-                <div className="card-content">
-                  <h3 className="h4 card-title">{project.title}</h3>
-                  <time
-                    className="publish-date"
-                    dateTime={project.date.replace(' ', '-')}
-                  >
-                    {project.date}
-                  </time>
-                </div>
-              </a>
-            </li>
-          ))}
+					{projects.map((project, index) => (
+						<li key={index}>
+							<a href={project.href} className="project-card" target="_blank" rel="noopener noreferrer">
+								<figure className="card-banner">
+									<Image width={500} height={200} src={project.image} alt={project.title} loading="lazy" />
+								</figure>
 
-          {/* <li>
-            <button className="load-more">Load More Works</button>
-          </li> */}
-        </ul>
-      </section>
-    </div>
-  );
+								<div className="card-content">
+									<h3 className="h4 card-title">{project.title}</h3>
+									<time className="publish-date" dateTime={project.date.replace(" ", "-")}>
+										{project.date}
+									</time>
+								</div>
+							</a>
+						</li>
+					))}
+				</ul>
+
+				{/* локальные стили только для списка описаний */}
+				<style jsx>{`
+					.project-desc-list {
+						margin: 0;
+						padding-left: 18px;
+						display: grid;
+						gap: 10px;
+					}
+					.project-desc-list li {
+						color: var(--color-secondary);
+						line-height: 1.7;
+					}
+					.project-desc-list strong {
+						color: var(--color-primary);
+						font-weight: 700;
+					}
+				`}</style>
+			</section>
+		</div>
+	);
 }
