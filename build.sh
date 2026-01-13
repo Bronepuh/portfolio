@@ -5,6 +5,7 @@ IMAGE_DEV="portfolio-dev"
 IMAGE_PROD="portfolio-prod"
 DOCKERFILE_DEV="Dockerfile.dev"
 DOCKERFILE_PROD="Dockerfile.prod"
+DOCKER_BUILDKIT=1 docker build -f "$DOCKERFILE" -t "$IMAGE" .
 
 MODE=$1
 

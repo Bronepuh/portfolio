@@ -1,57 +1,53 @@
-# ===== Стадия сборки =====
-FROM node:18 AS builder
+# ===== Build stage =====
+FROM node:18-slim AS builder
 
-ENV NODE_ENV=development
 WORKDIR /app
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# тулчейн для нативных модулей
+# toolchain (оставляем, если есть нативные модули)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Классический Yarn 1
+# Yarn 1
 RUN npm i -g yarn@1.22.22 --force
 ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
 
-# Кэшируем зависимости
+# deps cache
 COPY package.json yarn.lock ./
 RUN yarn config set registry https://registry.npmjs.org \
-    && yarn config set network-timeout 600000 \
-    && yarn install --frozen-lockfile
+ && yarn config set network-timeout 600000 \
+ && yarn install --frozen-lockfile --non-interactive
 
-# Копируем исходники
+# sources
 COPY . .
 
-# Транспилируем next.config.ts → next.config.mjs
-RUN yarn add -D tsx \
-    && npx tsx ./next.config.ts > next.config.mjs
+# ВАЖНО: не делаем yarn add -D tsx (ломает кеш).
+# Если next.config.ts у тебя TS-ный — можно вообще НЕ генерить next.config.mjs,
+# Next умеет читать next.config.ts. Но если тебе очень надо mjs — делай так:
+# RUN npx -y tsx ./next.config.ts > ./next.config.mjs
+# (я бы вообще убрал генерацию, поэтому шаг отсутствует)
 
-# Сборка Next в прод-режиме
 ENV NODE_ENV=production
 RUN yarn build
 
 
-# ===== Продакшн-стадия =====
-FROM node:18
+# ===== Runtime stage (no yarn install) =====
+FROM node:18-slim AS runner
 
-ENV NODE_ENV=production
 WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Классический Yarn 1 (для yarn start)
-RUN npm i -g yarn@1.22.22 --force
-ENV YARN_CACHE_FOLDER=/tmp/.yarn-cache
-
-# Копируем только то, что нужно для рантайма
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/yarn.lock ./yarn.lock
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.mjs ./next.config.mjs
-
-# Ставим только прод-зависимости
-RUN yarn config set registry https://registry.npmjs.org \
-    && yarn config set network-timeout 600000 \
-    && yarn install --production --frozen-lockfile --silent
-
+# Next standalone сервер читает PORT
+ENV PORT=3042
 EXPOSE 3042
-CMD ["yarn", "start"]
+
+# переносим минимальный рантайм
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
+
+# если у тебя есть next/image remotePatterns и т.п. — standalone всё учитывает
+CMD ["node", "server.js"]
