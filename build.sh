@@ -5,17 +5,18 @@ IMAGE_DEV="portfolio-dev"
 IMAGE_PROD="portfolio-prod"
 DOCKERFILE_DEV="Dockerfile.dev"
 DOCKERFILE_PROD="Dockerfile.prod"
-DOCKER_BUILDKIT=1 docker build -f "$DOCKERFILE" -t "$IMAGE" .
 
-MODE=$1
+MODE=${1:-dev}  # По умолчанию 'dev', если не указан аргумент
 
 if [ "$MODE" = "prod" ]; then
   IMAGE=$IMAGE_PROD
   DOCKERFILE=$DOCKERFILE_PROD
+  echo "🚀 Собираю PRODUCTION образ '$IMAGE' из '$DOCKERFILE'..."
 else
   IMAGE=$IMAGE_DEV
   DOCKERFILE=$DOCKERFILE_DEV
+  echo "🔧 Собираю DEVELOPMENT образ '$IMAGE' из '$DOCKERFILE'..."
 fi
 
-echo "🔧 Собираю образ '$IMAGE' из '$DOCKERFILE'..."
-docker build -f "$DOCKERFILE" -t "$IMAGE" .
+# Используем BuildKit для ускорения сборки
+DOCKER_BUILDKIT=1 docker build -f "$DOCKERFILE" -t "$IMAGE" .
